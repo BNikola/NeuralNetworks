@@ -23,8 +23,13 @@ def perfect_shot(basket_distance, player_distance):
     return initial_angle, initial_speed
 
 # generate 50 values for basket distance and player distance
-shot_distance = np.linspace(sd_start, sd_end, num=500)
-player_distance = np.linspace(pd_start, pd_end, num=500)
+# shot_distance = np.linspace(sd_start, sd_end, num=1000)
+# player_distance = np.linspace(pd_start, pd_end, num=1000)
+b_s = (18 - 6.75) / 1000
+p_s = 1.5 / 1000
+
+shot_distance = np.array([6.75 + b_s * i for i in range(0, 1001)])
+player_distance = np.array([1.5 + p_s * i for i in range(0, 1001)])
 
 random.shuffle(shot_distance)
 random.shuffle(player_distance)
@@ -39,4 +44,4 @@ df['initial_speed'] = initial_speed
 
 print(df)
 
-pd.DataFrame.to_csv(df, "training_set", sep=',')
+pd.DataFrame.to_csv(df, "training_set.csv", sep=',')

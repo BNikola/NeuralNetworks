@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv('training_set', index_col=0)
+df = pd.read_csv('training_set.csv', index_col=0)
 print(df)
 print(df.sample(frac=1).reset_index(drop=True))
 
@@ -31,9 +31,9 @@ class NeuralNetwork(object):
         self.input_size = 2
         self.output_size = 2
         self.hidden_size = 6 #(int)(500 / (5 * 4))
-        self.gama = 0.5
-        self.max_iter = 1000
-        self.max_error = 0.05
+        self.gama = 0.01
+        self.max_iter = 100000
+        self.max_error = 0.001
 
         # weights
         # self.W1 = np.array([[3., 1., 1., 4.], [2.,4.,1.,-5.]])
@@ -41,8 +41,8 @@ class NeuralNetwork(object):
         self.W1 = np.random.rand(self.input_size, self.hidden_size)
         self.W2 = np.random.rand(self.hidden_size, self.output_size)
 
-        # self.W1 = np.loadtxt('W1.txt')
-        # self.W2 = np.loadtxt('W2.txt')
+        # self.W1 = np.loadtxt('W1_62.txt')
+        # self.W2 = np.loadtxt('W2_62.txt')
 
     def sigmoid(self, s, deriv=False):
         if deriv == True:
@@ -54,7 +54,6 @@ class NeuralNetwork(object):
         self.z2 = self.sigmoid(self.z)  # activation function
         self.z3 = np.dot(self.z2, self.W2)  # dot product of hidden layer (z2) and second set of weights (3x1)
         output = self.sigmoid(self.z3)
-        # output[1] *= 15
         return output
 
     def back_propagation(self, input, desired_output, output):
@@ -90,14 +89,14 @@ class NeuralNetwork(object):
                 Ep = np.sum(np.square(j - out)) * 0.5
                 E = E + Ep
                 # print(i)
-                print(str(iter) + 'Greska: ' + str(E))
                 if Ep >= self.max_error:
                     self.back_propagation(i, j, out)
+            print(str(iter) + 'Greska: ' + str(E))
             iter += 1
         print('Gotovo')
         print(str(i) + '\t' + str(j))
-        # np.savetxt('W1.txt', self.W1)
-        # np.savetxt('W2.txt', self.W2)
+        np.savetxt('W1_100.txt', self.W1)
+        np.savetxt('W2_100.txt', self.W2)
         # print(out)
         print('--------')
 
@@ -131,17 +130,20 @@ def sigmoid2(s, deriv=False):
 # SRV = np.vectorize(sig_r)
 # endregion
 for i in range(1):
-    # df.sample(frac=1).reset_index(drop=True)
-    # input = np.transpose(np.array([df['shot_distance'], df['player_distance']]))
-    input = np.transpose(np.array([df['shot_distance'] / np.max(df['shot_distance']), df['player_distance'] / np.max(df['player_distance'])]))
-    desired_output = np.transpose(np.array([df['initial_angle'] / np.max(df['initial_angle']), df['initial_speed'] / np.max(df['initial_speed'])]))
+    df.sample(frac=1).reset_index(drop=True)
+    df_n = (df - df.min()) / (df.max() - df.min())
+    input = np.transpose(np.array([df_n['shot_distance'], df_n['player_distance']]))
+    desired_output = np.transpose(np.array([df_n['initial_angle'], df_n['initial_speed']]))
+    # input = np.transpose(np.array([df['shot_distance'] / np.max(df['shot_distance']), df['player_distance'] / np.max(df['player_distance'])]))
+    # desired_output = np.transpose(np.array([df['initial_angle'] / np.max(df['initial_angle']), df['initial_speed'] / np.max(df['initial_speed'])]))
 
-    # desired_output = np.transpose(np.array([df['initial_angle'], df['initial_speed']]))
-    # outS = SV(desired_output)
-    NN.train(input, desired_output)
+    # NN.train(input, desired_output)
 
-inp = np.array([8.75, 1.9])
-out = NN.feed_forward(inp)
+inp = np.array([6.75, 1.9])
+inp2 = np.array([(inp[0] - df['shot_distance'].min()) / (df['shot_distance'].max() - df['shot_distance'].min()),\
+                 (inp[1] - df['player_distance'].min()) / (df['player_distance'].max() - df['player_distance'].min())])
+
+out = NN.feed_forward(inp2)
 g = 9.81
 fig, ax = plt.subplots()
 print(out[1])
@@ -149,19 +151,22 @@ print(out[0])
 # print(sig_r(out[1]))
 print(13.2 + out[1])
 print(out[1] * 13.2 + out[1])
+print(out[1] * (df['initial_speed'].max() - df['initial_speed'].min()) + df['initial_speed'].min())
 
 # print(NN.W1)
 # print(NN.W2)
 
-plot_shot(ax, g, out[0], out[1] * (df['initial_speed'].max() - df['initial_speed'].min()) + df['initial_speed'].min(), inp[0], inp[1])
+plot_shot(ax, g,\
+          out[0] * (df['initial_angle'].max() - df['initial_angle'].min()) + df['initial_angle'].min(),\
+          out[1] * (df['initial_speed'].max() - df['initial_speed'].min()) + df['initial_speed'].min(), inp[0], inp[1])
 print(str(inp) + '\t' + str(out))
 
 
 # scale input
-input = np.array([[1,1], [0.1, 0]])
-output = np.array([[1,0], [0, 1]])
-NN.train(input, output)
-print(NN.feed_forward([0.5, 0.5]))
+# input = np.array([[1,1], [0.1, 0]])
+# output = np.array([[1,0], [0, 1]])
+# NN.train(input, output)
+# print(NN.feed_forward([0.5, 0.5]))
 
 
 #     [df['shot_distance'] / np.max(df['shot_distance']), df['player_distance'] / np.max(df['player_distance'])])
