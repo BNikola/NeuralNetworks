@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 df = pd.read_csv('training_set.csv', index_col=0)
+df = df.sample(frac=1).reset_index(drop=True)
 print(df)
 
 def plot_shot(ax, g, angle, speed, basket_distance, player_distance):
@@ -29,10 +30,10 @@ class NeuralNetwork(object):
         # parameters
         self.input_size = 2
         self.output_size = 2
-        self.hidden_size = 10
-        self.gama = 0.01
-        self.max_iter = 10000
-        self.max_error = 0.001
+        self.hidden_size = 8
+        self.gama = 1.1
+        self.max_iter = 50000
+        self.max_error = 0.00001
 
         # weights - the network has only 3 layers: input, output and one hidden layer
         # initialize weights with random values
@@ -40,8 +41,8 @@ class NeuralNetwork(object):
         # self.W2 = np.random.rand(self.hidden_size, self.output_size)
 
         # initialize weights from txt file (after training)
-        self.W1 = np.loadtxt('W1_2.txt')
-        self.W2 = np.loadtxt('W2_2.txt')
+        self.W1 = np.loadtxt('W1_2_42.txt')
+        self.W2 = np.loadtxt('W2_2_42.txt')
 
     def sigmoid(self, s, deriv=False):
         if deriv == True:
@@ -83,42 +84,45 @@ class NeuralNetwork(object):
         E_old = 1
         cnt = 0
         while (iter < self.max_iter) or (E < self.max_error):
-            training_set = training_set.sample(frac=1).reset_index(drop=True)
+            # training_set = training_set.sample(frac=1).reset_index(drop=True)
             input = np.transpose(np.array([training_set['shot_distance'], training_set['player_distance']]))
             desired_output = np.transpose(np.array([training_set['initial_angle'], training_set['initial_speed']]))
-            if (E_old > np.round(E, 1) or cnt > 100) and E != 0:
-                if self.gama > 0.02:
+            if (cnt > 100) and E != 0:
+                if self.gama > 0.1:
                     self.gama = self.gama - 0.02
-                    E_old = np.round(E, 1)
+                    E_old = np.round(E, 2)
                     cnt = 0
+            # elif cnt > 200:
+            #     self.gama += 0.02
             E = 0
             for i, j in zip(input, desired_output):
                 out = self.feed_forward(i)
                 # temp error
-                Ep = np.sum(np.square(j - out)) * 0.1
+                Ep = np.sum(np.square(j - out)) * 0.5
                 E = E + Ep
                 if Ep >= self.max_error:
                     self.back_propagation(i, j, out)
-
+            # if cnt % 10 == 0:
             print(str(iter) + '\tGama: ' + str(np.round(self.gama,3)) + '\tGreska:\t' + str(np.round(E,15)) + '\t' + str(E_old) + '\t' + str(cnt))
-            if cnt > 1001:
-                self.gama = 0.5
+            # if cnt > 3001:
+            #     self.gama = 0.01
             iter += 1
             cnt += 1
 
         print(str(i) + '\t' + str(j))
 
         # save weights in file
-        np.savetxt('W1_2.txt', self.W1)
-        np.savetxt('W2_2.txt', self.W2)
+        np.savetxt('W1_2_42.txt', self.W1)
+        np.savetxt('W2_2_42.txt', self.W2)
 
 NN = NeuralNetwork()
 
 df_n = (df - df.min()) / (df.max() - df.min())
+# df_n = ((df - df.min()) / (df.max() - df.min())) * (0.5 - 0.731059) + 0.5
 
-# NN.train(df_n)
+NN.train(df_n)
 
-inp = np.array([17.75, 2])
+inp = np.array([18, 1.86])
 
 inp2 = np.array([(inp[0] - df['shot_distance'].min()) / (df['shot_distance'].max() - df['shot_distance'].min()),\
                  (inp[1] - df['player_distance'].min()) / (df['player_distance'].max() - df['player_distance'].min())])
