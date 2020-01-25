@@ -40,8 +40,6 @@ class NeuralNetwork(object):
 
         # weights - the network has only 3 layers: input, output and one hidden layer
         # initialize weights with random values
-        # self.W1 = np.array([[3., 1., 1., 4.], [2.,4.,1.,-5.]])
-        # self.W2 = np.array([[1.,3.,1.,-16.], [-2.,-3.,-1.,16.]]).T
         # self.W1 = np.random.rand(self.input_size, self.hidden_size)
         # self.W2 = np.random.rand(self.hidden_size, self.output_size)
 
@@ -89,7 +87,6 @@ class NeuralNetwork(object):
                 self.W1_delta[i][j] = self.gama * self.z2_delta[i] * input[j]
         self.W1 += self.W1_delta.T
 
-    # def train(self, training_set):
 
     def train(self, input, desired_output):
         iter = 0
@@ -99,9 +96,7 @@ class NeuralNetwork(object):
         while (iter < self.max_iter):
             if E < self.max_error and E != 23:
                 break
-            # training_set = training_set.sample(frac=1).reset_index(drop=True)
-            # input = np.transpose(np.array([training_set['shot_distance'], training_set['player_distance']]))
-            # desired_output = np.transpose(np.array([training_set['initial_speed'], training_set['initial_angle']]))
+
             # if (cnt > 100) and E != 0:
             #     if self.gama > 0.02:
             #         self.gama = self.gama - 0.01
@@ -117,24 +112,12 @@ class NeuralNetwork(object):
                 E = E + Ep
                 if Ep >= self.max_error:
                     self.back_propagation(i, j, out)
-            # if cnt % 10 == 0:
-            #     print('----------------------\nW1')
-            #     print(self.W1)
-            #     print('----------------------\nW2')
-            #     print(self.W2)
-            #     print('----------------------\n1net')
-            #     print(self.z)
-            #     print('----------------------\n1y')
-            #     print(self.z2)
-            #     print('----------------------\n2net')
-            #     print(self.z3)
+
             print(str(iter) + '\tGama: ' + str(np.round(self.gama,3)) + '\tGreska:\t' + str(np.round(E,15)) + '\t' + str(E_old) + '\t' + str(cnt))
-            # if cnt > 3001:
-            #     self.gama = 0.01
+
             iter += 1
             # cnt += 1
 
-        # print(str(i) + '\t' + str(j))
 
 
 
@@ -152,15 +135,7 @@ class NeuralNetwork(object):
         return np.abs(start_range - end_range) < 0.1086
 
 NN = NeuralNetwork()
-# input = np.array([[1,1], [0.1, 0]])
-# output = np.array([[1,0], [0, 1]])
-# NN.train(input, output)
-# print(NN.feed_forward([0.5, 0.5]))
 
-#
-# df_n = (df - df.min()) / (df.max() - df.min())
-# # df_n = ((df - df.min()) / (df.max() - df.min())) * (0.5 - 0.731059) + 0.5
-#
 
 
 input = np.transpose(np.array([df['shot_distance'], df['player_distance']]))
@@ -211,18 +186,3 @@ g = 9.81
 fig, ax = plt.subplots()
 plot_shot(ax, g, out[0]*20, out[1]*20, inp[0], inp[1])
 
-
-# inp2 = np.array([(inp[0] - df['shot_distance'].min()) / (df['shot_distance'].max() - df['shot_distance'].min()),\
-#                  (inp[1] - df['player_distance'].min()) / (df['player_distance'].max() - df['player_distance'].min())])
-#
-# out = NN.feed_forward(inp2)
-#
-# g = 9.81
-# fig, ax = plt.subplots()
-# print(out[1] * (df['initial_speed'].max() - df['initial_speed'].min()) + df['initial_speed'].min())
-# print(str(inp) + '\t' + str(out * (df[['initial_angle', 'initial_speed']].max() - df[['initial_angle', 'initial_speed']].min()) + df[['initial_angle', 'initial_speed']].min()))
-#
-# plot_shot(ax, g,\
-#           out[0] * (df['initial_angle'].max() - df['initial_angle'].min()) + df['initial_angle'].min(),\
-#           out[1] * (df['initial_speed'].max() - df['initial_speed'].min()) + df['initial_speed'].min(),\
-#           inp[0], inp[1])
