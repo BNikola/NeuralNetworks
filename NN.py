@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('training_set.csv', index_col=0)
+df = pd.read_csv('training_set2.csv', index_col=0)
 df = df.sample(frac=1).reset_index(drop=True)
 print(df)
 
@@ -33,8 +33,8 @@ class NeuralNetwork(object):
         self.input_size = 2
         self.output_size = 2
         self.hidden_size = 10
-        self.gama = 0.1
-        self.max_iter = 15000
+        self.gama = 0.01
+        self.max_iter = 50000
         self.max_error = 0.0001
 
 
@@ -46,8 +46,8 @@ class NeuralNetwork(object):
         # self.W2 = np.random.rand(self.hidden_size, self.output_size)
 
         # initialize weights from txt file (after training)
-        self.W1 = np.loadtxt('W1_2_92.txt')
-        self.W2 = np.loadtxt('W2_2_92.txt')
+        self.W1 = np.loadtxt('W1_2_94.txt')
+        self.W2 = np.loadtxt('W2_2_94.txt')
 
     def sigmoid(self, s, deriv=False):
         if deriv == True:
@@ -102,11 +102,11 @@ class NeuralNetwork(object):
             # training_set = training_set.sample(frac=1).reset_index(drop=True)
             # input = np.transpose(np.array([training_set['shot_distance'], training_set['player_distance']]))
             # desired_output = np.transpose(np.array([training_set['initial_speed'], training_set['initial_angle']]))
-            if (cnt > 73) and E != 0:
-                if self.gama > 0.02:
-                    self.gama = self.gama - 0.01
-                    E_old = np.round(E, 2)
-                    cnt = 0
+            # if (cnt > 100) and E != 0:
+            #     if self.gama > 0.02:
+            #         self.gama = self.gama - 0.01
+            #         E_old = np.round(E, 2)
+            #         cnt = 0
             # elif cnt > 200:
             #     self.gama += 0.02
             E = 0
@@ -132,21 +132,24 @@ class NeuralNetwork(object):
             # if cnt > 3001:
             #     self.gama = 0.01
             iter += 1
-            cnt += 1
+            # cnt += 1
 
         # print(str(i) + '\t' + str(j))
 
 
 
         # save weights in file
-        np.savetxt('W1_2_92.txt', self.W1)
-        np.savetxt('W2_2_92.txt', self.W2)
+        np.savetxt('W1_2_95.txt', self.W1)
+        np.savetxt('W2_2_95.txt', self.W2)
 
     def throw(self, angle, speed):
         x1 = ( np.tan(angle) + np.sqrt( np.tan(angle)**2 - (2 * 9.81 * 0.55) / ( speed**2 * np.cos(angle)**2 ) ) ) / ( 9.81 / (speed**2 * np.cos(angle)**2 ) )
         x2 = ( np.tan(angle) - np.sqrt( np.tan(angle)**2 - (2 * 9.81 * 0.55) / ( speed**2 * np.cos(angle)**2 ) ) ) / ( 9.81 / (speed**2 * np.cos(angle)**2 ) )
 
         return np.max([x1, x2])
+
+    def check_shot(self, start_range, end_range):
+        return np.abs(start_range - end_range) < 0.1086
 
 NN = NeuralNetwork()
 # input = np.array([[1,1], [0.1, 0]])
@@ -158,6 +161,8 @@ NN = NeuralNetwork()
 # df_n = (df - df.min()) / (df.max() - df.min())
 # # df_n = ((df - df.min()) / (df.max() - df.min())) * (0.5 - 0.731059) + 0.5
 #
+
+
 input = np.transpose(np.array([df['shot_distance'], df['player_distance']]))
 desired_output = np.transpose(np.array([df['initial_angle'], df['initial_speed']]))
 print(input.shape)
@@ -170,11 +175,36 @@ for i, j in zip(input[:10], desired_output[:10]):
 # NN.train(input, desired_output)
 
 
+result = pd.DataFrame()
+
+
+sd_start = 6.75
+sd_end = 18
+pd_start = 1.5
+pd_end = 3
+shot_distance = np.linspace(sd_start, sd_end, num=100)
+player_distance = np.linspace(pd_start, pd_end, num=100)
+
+
+np.random.shuffle(shot_distance)
+np.random.shuffle(player_distance)
+
+inp2 = np.array([shot_distance, player_distance]).T
+
+print('---------')
+counter = 0
+for i in inp2:
+    out2 = NN.feed_forward(i)
+    shot = NN.throw(out2[0]*20, out2[1]*20)
+    print(str(i[0]) + '\t' + str(shot) + '\t' + str(i[0] - 0.1086) + '\t' + str(i[0] + 0.1086) + '\t' + str(NN.check_shot(i[0], shot)))
+    if NN.check_shot(i[0], shot) == True:
+        counter += 1
+print('Percent')
+print(counter)
+print('---------')
 
 inp = np.array([16, 1.7])
 out = NN.feed_forward(inp)
-
-print('---------')
 print(NN.throw(out[0]*20, out[1]*20))
 print(out)
 g = 9.81
