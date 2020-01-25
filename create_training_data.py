@@ -22,9 +22,14 @@ def perfect_shot(basket_distance, player_distance):
     initial_speed = np.sqrt(g * (dh + np.sqrt(dh**2 + basket_distance**2)))
     return initial_angle, initial_speed
 
+def perfect_shot2(distance, defender):
+    angle = (0.38 - distance / 135) * np.pi
+    velocity = distance * np.sqrt(g / (distance * np.tan(angle) - H + h) / 2) / np.cos(angle)
+    return angle, velocity
+
 # generate 50 values for basket distance and player distance
-shot_distance = np.linspace(sd_start, sd_end, num=1000)
-player_distance = np.linspace(pd_start, pd_end, num=1000)
+shot_distance = np.linspace(sd_start, sd_end, num=100)
+player_distance = np.linspace(pd_start, pd_end, num=100)
 # b_s = (18 - 6.75) / 1000
 # p_s = 1.5 / 1000
 #
@@ -34,7 +39,7 @@ player_distance = np.linspace(pd_start, pd_end, num=1000)
 random.shuffle(shot_distance)
 random.shuffle(player_distance)
 
-initial_angle, initial_speed = perfect_shot(shot_distance, player_distance)
+initial_angle, initial_speed = perfect_shot2(shot_distance, player_distance)
 
 df = pd.DataFrame()
 df['shot_distance'] = shot_distance
