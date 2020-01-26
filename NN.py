@@ -20,12 +20,16 @@ def plot_shot(ax, g, angle, speed, basket_distance, player_distance):
     y = ((speed * time_mat) * np.sin(angle)) - ((0.5 * g) * (time_mat ** 2)) + 2.5
 
     ax.plot(x, y)
+    ax.bar(0, 2.5, color='green')
     ax.bar(player_distance, 2.9, color='orange')
     # ax.bar(player_distance, height=)
     plt.bar(player_distance, height=0.2, bottom=2.9, color='red')
     ax.bar(basket_distance, 3.05, color='lime', width=0.4)
 
-    plt.show()
+    # plt.show()
+    plt.pause(0.5)
+    plt.draw()
+    ax.cla()
 
 class NeuralNetwork(object):
     def __init__(self):
@@ -33,19 +37,19 @@ class NeuralNetwork(object):
         self.input_size = 2
         self.output_size = 2
         self.hidden_size = 10
-        self.gama = 0.01
+        self.gama = 0.002
         self.max_iter = 50000
         self.max_error = 0.0001
 
 
         # weights - the network has only 3 layers: input, output and one hidden layer
         # initialize weights with random values
-        # self.W1 = np.random.rand(self.input_size, self.hidden_size)
-        # self.W2 = np.random.rand(self.hidden_size, self.output_size)
+        self.W1 = np.random.rand(self.input_size, self.hidden_size)
+        self.W2 = np.random.rand(self.hidden_size, self.output_size)
 
         # initialize weights from txt file (after training)
-        self.W1 = np.loadtxt('W1_2_94.txt')
-        self.W2 = np.loadtxt('W2_2_94.txt')
+        self.W1 = np.loadtxt('W1_2_96.txt')
+        self.W2 = np.loadtxt('W2_2_96.txt')
 
     def sigmoid(self, s, deriv=False):
         if deriv == True:
@@ -59,7 +63,8 @@ class NeuralNetwork(object):
 
     def feed_forward(self, input):
         self.z = np.dot(input, self.W1)  # dot product of input and first set of weights
-        self.z2 = self.sigmoid(self.z)  # activation function
+        self.z2 = self.tanh(self.z)  # activation function
+        # self.z2 = self.sigmoid(self.z)  # activation function
         self.z3 = np.dot(self.z2, self.W2)  # dot product of hidden layer (z2) and second set of weights - net of last layer
         output = self.sigmoid(self.z3)  # activation function
 
@@ -79,7 +84,8 @@ class NeuralNetwork(object):
 
         # hidden layer
         self.z2_error = self.output_delta.dot(self.W2.T)
-        self.z2_delta = self.z2_error * self.sigmoid(self.z2, deriv=True)
+        self.z2_delta = self.z2_error * self.tanh(self.z2, deriv=True)
+        # self.z2_delta = self.z2_error * self.sigmoid(self.z2, deriv=True)
 
         self.W1_delta = np.zeros([len(self.z2_delta), len(input)])
         for i in range(0, len(self.z2_delta)):
@@ -122,8 +128,8 @@ class NeuralNetwork(object):
 
 
         # save weights in file
-        np.savetxt('W1_2_95.txt', self.W1)
-        np.savetxt('W2_2_95.txt', self.W2)
+        np.savetxt('W1_2_96.txt', self.W1)
+        np.savetxt('W2_2_96.txt', self.W2)
 
     def throw(self, angle, speed):
         x1 = ( np.tan(angle) + np.sqrt( np.tan(angle)**2 - (2 * 9.81 * 0.55) / ( speed**2 * np.cos(angle)**2 ) ) ) / ( 9.81 / (speed**2 * np.cos(angle)**2 ) )
@@ -152,33 +158,55 @@ for i, j in zip(input[:10], desired_output[:10]):
 
 result = pd.DataFrame()
 
-
 sd_start = 6.75
 sd_end = 18
 pd_start = 1.5
 pd_end = 3
-shot_distance = np.linspace(sd_start, sd_end, num=100)
-player_distance = np.linspace(pd_start, pd_end, num=100)
+num = 23
+shot_distance = np.linspace(sd_start, sd_end, num=num)
+player_distance = np.linspace(pd_start, pd_end, num=num)
+fig, ax = plt.subplots()
+g = 9.81
 
 
 np.random.shuffle(shot_distance)
 np.random.shuffle(player_distance)
-
+result['shot_distace'] = shot_distance
+result['player_distace'] = player_distance
 inp2 = np.array([shot_distance, player_distance]).T
 
+plt.ion()
 print('---------')
 counter = 0
+angle = np.array([])
+vel = np.array([])
+sh = np.array([])
 for i in inp2:
     out2 = NN.feed_forward(i)
+    angle = np.append(angle, out2[0])
+    vel = np.append(vel, out2[1])
     shot = NN.throw(out2[0]*20, out2[1]*20)
+    sh = np.append(sh, shot)
     print(str(i[0]) + '\t' + str(shot) + '\t' + str(i[0] - 0.1086) + '\t' + str(i[0] + 0.1086) + '\t' + str(NN.check_shot(i[0], shot)))
+    plot_shot(ax, g, out2[0] * 20, out2[1] * 20, i[0], i[1])
+
     if NN.check_shot(i[0], shot) == True:
         counter += 1
+
+plt.show()
+result.insert(2, 'angle', angle*20)
+result.insert(3, 'speed', vel*20)
+result.insert(4, 'shot', sh)
+result['res'] = NN.check_shot(result['shot_distace'], result['shot'])
+
+misses = result[result['res'] == False]
+print(misses)
 print('Percent')
-print(counter)
+print(counter / num)
+print(result)
 print('---------')
 
-inp = np.array([16, 1.7])
+inp = np.array([8.76, 3])
 out = NN.feed_forward(inp)
 print(NN.throw(out[0]*20, out[1]*20))
 print(out)
