@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 df = pd.read_csv('training_set2.csv', index_col=0)
 df = df.sample(frac=1).reset_index(drop=True)
 print(df)
+np.random.seed(1)
 
 def plot_shot(ax, g, angle, speed, basket_distance, player_distance):
     # ax.set_xlim([0, 20])
@@ -44,12 +45,12 @@ class NeuralNetwork(object):
 
         # weights - the network has only 3 layers: input, output and one hidden layer
         # initialize weights with random values
-        self.W1 = np.random.rand(self.input_size, self.hidden_size)
-        self.W2 = np.random.rand(self.hidden_size, self.output_size)
+        # self.W1 = np.random.rand(self.input_size, self.hidden_size)
+        # self.W2 = np.random.rand(self.hidden_size, self.output_size)
 
         # initialize weights from txt file (after training)
-        self.W1 = np.loadtxt('W1_2_96.txt')
-        self.W2 = np.loadtxt('W2_2_96.txt')
+        self.W1 = np.loadtxt('W1_2_96_2.txt')
+        self.W2 = np.loadtxt('W2_2_96_2.txt')
 
     def sigmoid(self, s, deriv=False):
         if deriv == True:
@@ -94,7 +95,9 @@ class NeuralNetwork(object):
         self.W1 += self.W1_delta.T
 
 
-    def train(self, input, desired_output):
+    # def train(self, input, desired_output):
+    def train(self, training_set):
+
         iter = 0
         E = 23
         E_old = 1
@@ -102,7 +105,9 @@ class NeuralNetwork(object):
         while (iter < self.max_iter):
             if E < self.max_error and E != 23:
                 break
-
+            training_set.sample(frac=1).reset_index(drop=True)
+            input = np.transpose(np.array([training_set['shot_distance'], training_set['player_distance']]))
+            desired_output = np.transpose(np.array([training_set['initial_angle'], training_set['initial_speed']]))
             # if (cnt > 100) and E != 0:
             #     if self.gama > 0.02:
             #         self.gama = self.gama - 0.01
@@ -128,8 +133,8 @@ class NeuralNetwork(object):
 
 
         # save weights in file
-        np.savetxt('W1_2_96.txt', self.W1)
-        np.savetxt('W2_2_96.txt', self.W2)
+        # np.savetxt('W1_2_96_3.txt', self.W1)
+        # np.savetxt('W2_2_96_3.txt', self.W2)
 
     def throw(self, angle, speed):
         x1 = ( np.tan(angle) + np.sqrt( np.tan(angle)**2 - (2 * 9.81 * 0.55) / ( speed**2 * np.cos(angle)**2 ) ) ) / ( 9.81 / (speed**2 * np.cos(angle)**2 ) )
@@ -154,6 +159,7 @@ for i, j in zip(input[:10], desired_output[:10]):
     print(str(NN.throw(j[0], j[1])) + ' \t ' + str(i))
 
 # NN.train(input, desired_output)
+# NN.train(df)
 
 
 result = pd.DataFrame()
@@ -162,7 +168,7 @@ sd_start = 6.75
 sd_end = 18
 pd_start = 1.5
 pd_end = 3
-num = 500
+num = 100
 shot_distance = np.linspace(sd_start, sd_end, num=num)
 player_distance = np.linspace(pd_start, pd_end, num=num)
 fig, ax = plt.subplots()
@@ -171,11 +177,11 @@ g = 9.81
 
 np.random.shuffle(shot_distance)
 np.random.shuffle(player_distance)
-result['shot_distace'] = shot_distance
+result['shot_distance'] = shot_distance
 result['player_distace'] = player_distance
 inp2 = np.array([shot_distance, player_distance]).T
 
-plt.ion()
+# plt.ion()
 print('---------')
 counter = 0
 angle = np.array([])
@@ -187,30 +193,34 @@ for i in inp2:
     vel = np.append(vel, out2[1])
     shot = NN.throw(out2[0]*20, out2[1]*20)
     sh = np.append(sh, shot)
-    print(str(i[0]) + '\t' + str(shot) + '\t' + str(i[0] - 0.1086) + '\t' + str(i[0] + 0.1086) + '\t' + str(NN.check_shot(i[0], shot)))
+    # print(str(i[0]) + '\t' + str(shot) + '\t' + str(i[0] - 0.1086) + '\t' + str(i[0] + 0.1086) + '\t' + str(NN.check_shot(i[0], shot)))
     # plot_shot(ax, g, out2[0] * 20, out2[1] * 20, i[0], i[1])
 
     if NN.check_shot(i[0], shot) == True:
         counter += 1
 
-plt.show()
+# plt.show()
 result.insert(2, 'angle', angle*20)
 result.insert(3, 'speed', vel*20)
 result.insert(4, 'shot', sh)
-result['res'] = NN.check_shot(result['shot_distace'], result['shot'])
+result['res'] = NN.check_shot(result['shot_distance'], result['shot'])
 
 misses = result[result['res'] == False]
+print('Misses:')
 print(misses)
-print('Percent')
-print(counter / num)
+print('---------')
 print(result)
 print('---------')
-
+print('{:<10} {:<10} {:<10} {:<10}'.format('Shots', 'Hits','Misses','Percent'))
+# print(str(num) + '\t\t' + str(num - len(misses)) + '\t\t\t' + str(len(misses)) + '\t\t\t' + str(counter / num * 100))
+print('{:<10} {:<10} {:<10} {:<10.2f}'.format(num, num-len(misses), len(misses), counter / num * 100))
 inp = np.array([8.76, 3])
 out = NN.feed_forward(inp)
-print(NN.throw(out[0]*20, out[1]*20))
-print(out)
+
 g = 9.81
 fig, ax = plt.subplots()
-plot_shot(ax, g, out[0]*20, out[1]*20, inp[0], inp[1])
+# plot_shot(ax, g, out[0]*20, out[1]*20, inp[0], inp[1])
+
+
+
 
